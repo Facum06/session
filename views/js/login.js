@@ -5,7 +5,7 @@ const formLogPass = document.getElementById('formLogPass');
 let userLog = "";
 
 window.addEventListener("load", function(event) {
-    cheqUser();
+    cheqUser();    
 });
 
 function cheqUser(){
@@ -41,27 +41,22 @@ btnLogin.addEventListener('click', () => {
 
     fetch('/login', {
         method: 'POST',
+        mode: 'cors',
+        credentials: "same-origin",
         headers: {
           'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({'user':  user, 'pass': pass})
+          'Content-Type': 'application/json',          
+        },        
+        
+        body: JSON.stringify({'username':  user, 'password': pass})
       }).then(response => response.json())
       .catch(error => console.error('Error:', error))
       .then(response => {
         let vista = "";
         statusFrm.style.display = 'block';
-        if (response.status === "1"){
-            userLog = user;
-            vista += "<h2 class='alert-success'>";
-            vista += response.message;
-            vista += "</h2>";
-            vista += "<button id='btnCerrar' onclick='logout();' class='btn btn-outline-danger btn-block mb-4'>Cerrar Sesión</button>";            
-            formLogUser.style.display = "none";
-            formLogPass.style.display = "none";
-            btnLogin.style.display = "none";
-            statusFrm.innerHTML = vista;
-        }else {
+        if (response.status === "1") {
+          window.location.href = "/home";
+        } else {
             vista += "<h2 class='alert-error'>";
             vista += response.message;
             vista += "</h2>";
