@@ -23,7 +23,10 @@ app.use("/login-error", express.static(__dirname + "/views"))
 app.use(session({
     secret: "secreto",
     resave: false,
-    saveUninitialized: true
+    saveUninitialized: true,
+    cookie: {
+        maxAge: 60000 * 10 //DIEZ MINUTOS SESION
+    }
 }));
 
 app.use(passport.initialize());
@@ -56,7 +59,7 @@ app.post("/register", (req, res) => {
     User.findOne({username}, async (err, user) => {
         if (err) return console.log(err);
         if (user) {
-            return res.json({obj: user, status: "ok"}) //PLANILLA CON ERRORES SI HAY USER
+            return res.json({obj: user, status: "ok"}) 
         }
         if (!user) {//USUARIO INDEFINIDO
             const hashedPass = await bcrypt.hash(password, 10);
@@ -75,9 +78,7 @@ app.post("/login",passport.authenticate("local", { failureRedirect: "login-error
     const {username, password} = req.body;
     User.findOne({username}, (err, user) => {
         if (err) console.log(err)
-        if(!user) {
-            //return res.redirect("/login-error")
-            //res.redirect("/home")
+        if(!user) {            
             return res.json({status: '0', message: "Datos incorrectos"})
         }
         bcrypt.compare(password, user.password, (err, isMatch) => {
@@ -88,28 +89,24 @@ app.post("/login",passport.authenticate("local", { failureRedirect: "login-error
                 }else {
                     req.session.contador = 1;            
                 }
-                req.session.expires = 60000;
+                //req.session.expires = 10;
                 req.session.user = user.username;
-                req.session.admin = true;
-                //req.user = user.username;
+                req.session.admin = true;                
                 res.json({status: '1', message: "Bienvenido "+user.username});
-                //res.redirect("/home")
             } 
         });
     });
 });
 
-app.get("/login",passport.authenticate("local", { failureRedirect: "login-error" }),
+app.get("/login",passport.authenticate("local", { failureRedirect: "log" }),
     (req, res) => {
-      res.redirect("/datos");
+      res.redirect("/home");
     }
-  );
+);
   
 app.get("/home", async (req, res) => {    
     if (req.user){
         const datosUsuario = await User.findById(req.user._id);
-        //res.render("datos", {datos: datosUsuario});
-        //res.json({"datos": datosUsuario});
         res.sendFile('./views/home.html', {root: __dirname, datosUsuario:datosUsuario});        
     }else {
         res.sendFile("./views/login-error.html", {root: __dirname});
@@ -152,7 +149,8 @@ app.get("/logout", (req, res) => {
             return res.send({status: "0", message: err});
         }
     });
-    res.send({status: "1", message: "Hasta Luego "})
+    //res.send({status: "1", message: "Hasta Luego "})
+    res.redirect("/log");
 });
 
 app.get("/logout2", (req, res) => {

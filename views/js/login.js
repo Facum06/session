@@ -20,6 +20,7 @@ function cheqUser(){
             vista += "<h2 class=''>";
             vista += "Usuario logueado: <b class='mayus'>"+response.user+ "</b><br>Visitaste el sitio "+response.contador+ " veces";
             vista += "</h2>";
+            vista += "<a id='btnHome' href='/home' class='btn btn-outline-info btn-block mb-4'>Ir a Home</a>";            
             vista += "<button id='btnCerrar' onclick='logout()' class='btn btn-outline-danger btn-block mb-4'>Cerrar Sesión</button>";            
             statusFrm.innerHTML = vista;            
             formLogUser.style.display = "none";
