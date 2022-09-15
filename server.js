@@ -1,34 +1,57 @@
 const express = require("express");
 const app = express();
 const session = require("express-session");
-const MongoStore = require("connect-mongo");
-const advanceOptions = {useNewUrlParser:true, useUnifiedTopology: true};
+//const MongoStore = require("connect-mongo");
+//const advanceOptions = {useNewUrlParser:true, useUnifiedTopology: true};
 const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
-const PORT = process.env.PORT || 8080;
 const mongoose = require("mongoose");
 const  User  = require("./models/User");
 const bcrypt = require("bcrypt");
+require("dotenv").config(".env");
+const process = require("process");
+//const  { fork } = require("child_process");
+const parse = require("yargs/yargs");
+const routerRandom = require("./routes/random_r.js");
 
-mongoose.connect("mongodb+srv://root:1234@cluster0.hnjvbhu.mongodb.net/?retryWrites=true&w=majority")
-        .then(() => console.log("DB CONECTADA"))
-        .catch((err) => console.log(err));
+const serverInfo = {
+    arguments: process.argv.slice(2),
+    os: process.env.os,
+    node_version: process.versions.node,
+    memory_usage: process.memoryUsage().rss,
+    exec_path: process.execPath,
+    process_id: process.pid,
+    current_working_directory: process.cwd(),
+};
+
+mongoose.connect(
+        process.env.MONGO_URL
+    )
+    .then(() => console.log("DB CONECTADA"))
+    .catch((err) => console.log(err));
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 app.use("/log", express.static(__dirname + "/views"));
 app.use("/registerHome", express.static(__dirname + "/views"));
 app.use("/home", express.static(__dirname + "/views"));
-app.use("/login-error", express.static(__dirname + "/views"))
+app.use("/login-error", express.static(__dirname + "/views"));
 
+//EJERCICIO RANDOM
+app.use("/api/randoms", routerRandom);
+//EJERCICIO RANDOM
+
+//SESSION
 app.use(session({
-    secret: "secreto",
+    secret:  process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
     cookie: {
         maxAge: 60000 * 10 //DIEZ MINUTOS SESION
     }
 }));
+//SESSION
 
+//PASSPORT
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -44,7 +67,7 @@ passport.use(
         });
       });
     })
-  );
+);
 
 passport.serializeUser(function(user, done){
     done(null, user.id);
@@ -53,6 +76,22 @@ passport.deserializeUser( async function(id, done){
     const user = await User.findById(id);
     done(null, user);
 });
+//PASSPORT
+
+
+//YARGS
+/*
+const args = yargs.argv; 
+const PORT = process.env.PORT || 8080;
+*/
+const yargs = parse(process.argv.slice(2));
+const port = yargs	
+	.default({        
+		port: 8080,		
+}).argv;
+
+const PORT = port;
+//YARGS
 
 app.post("/register", (req, res) => {
     const {username, password , direccion} = req.body;    
@@ -84,12 +123,11 @@ app.post("/login",passport.authenticate("local", { failureRedirect: "login-error
         bcrypt.compare(password, user.password, (err, isMatch) => {
             if (err) console.log(err);
             if (isMatch) {
-                if (req.session.contador){
+                if (req.session.contador) {
                     req.session.contador++;            
                 }else {
                     req.session.contador = 1;            
-                }
-                //req.session.expires = 10;
+                }                
                 req.session.user = user.username;
                 req.session.admin = true;                
                 res.json({status: '1', message: "Bienvenido "+user.username});
@@ -161,6 +199,11 @@ app.get("/logout2", (req, res) => {
     });
 });
 
+app.get("/info", (req, res) => {
+    res.json(serverInfo);
+});
+  
+
 function auth(req, res, next){
     if(req.session?.user === "Facu" && req.session?.admin){
         return next();
@@ -171,5 +214,3 @@ function auth(req, res, next){
 const server = app.listen(PORT, () => {
     console.log(`Servidor iniciado en puerto ${server.address().port}`);
 });
-
-//export default app;
